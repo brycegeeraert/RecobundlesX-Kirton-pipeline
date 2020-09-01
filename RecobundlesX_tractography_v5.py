@@ -5,7 +5,13 @@ Created on Thu Jul 16 10:02:10 2020
 
 @author: Bryce
 
-This script will be used to test our scil_recognize_multi_bundles.py
+----- Usage ------
+
+Perform RecoX tractography on a data folder, given a set of atlas subjects
+(Sept 2020, probably 5 TDC atlas subjects I have built AF and UFs for).
+
+python RecobundlesX_tractography_v#.py
+ - change dir_data and dir_RecoX below as needed before running this script
 
 ----- Versions -----
 1: the shell commands are included as rough comments that I used when first trying out recobundlex. More importantly, the loop below is a test for 5 AIS pxs, pointing to
@@ -18,6 +24,10 @@ atlas tracts from the Rheault Zenodo example (5 mystery subjects, all kinds of t
 4: modded parameters not doing well. Tested in 9 participants (3 per group) and returned to default parameters with minimal_vote 0.75,
    this script runs in all participants though, not just the 9.
        - Aug 20: changed minimal vote from 0.75 to 0.5, because TDC tracts had several 0 streamline results
+       - Resultant tracts look very good!
+       
+5: Modified script to accept AIS_R and PVI_R participants, and to process new data from the
+   RH_and_extra tractoflow run on ARC (see language work log for details on that sub-cohort)
 --------------------
 """
 
@@ -52,7 +62,7 @@ def getSubjectList(data_dir):
 def getSubjectTag(subject_directory):
     
     #make a regex below which will find one of 3 groups, and a subject tag
-    identifier_regex = re.compile(r'(TDC|AIS_L|PVI_L).*(\d\d-\d\d\d\d)')
+    identifier_regex = re.compile(r'(TDC|AIS_L|PVI_L|AIS_R|PVI_R).*(\d\d-\d\d\d\d)')
     info_list = identifier_regex.findall(subject_directory)
     
     #if working as intended, should return a list with group followed by tag
@@ -61,16 +71,9 @@ def getSubjectTag(subject_directory):
     
     return group, tag
 
-    # subStrings = subject_directory.split('/')
-    # for x in subStrings:
-    #     if re.match(r'\d\d-\d\d\d\d', x):
-    #         subject_tag = x
-        
-    # return subject_tag, subject_bin
-
 # FUNCTION: if registration of subject t1 to recox mni template has not been done,
 # do it!
-def antsRegistration(tag, t1, dir_atlas):
+def antsRegistration(group, tag, t1, dir_atlas, dir_ants_registrations):
     recox_atlas_template = dir_atlas+'/mni_masked.nii.gz'
     ants_warps = dir_ants_registrations+tag+'_to_mni_'
     ants_affine_mat = ants_warps+'0GenericAffine.mat'
@@ -104,7 +107,8 @@ def executeRecoX(group, tag, tractogram, dir_atlas, affine, dir_recox_tracts):
 """
 VARIABLES WHICH CONTROL THIS SCRIPT
 """
-dir_data = '/Volumes/Venus/Tractoflow_APSP_results/'
+#dir_data = '/Volumes/Venus/Tractoflow_APSP_results/'
+dir_data = '/Volumes/Venus/Tractoflow_RH_and_extras/'
 dir_RecoX = '/Volumes/Venus/RecobundlesX/'
 
 """
@@ -130,9 +134,6 @@ def main():
         
         ## Subject's files from tractoflow
         subj_t1 = parent_directory+'/Register_T1/'+tag+'__t1_warped.nii.gz'
-        # subj_dwi_nii = parent_directory+'/Extract_DTI_Shell/'+tag+'__dwi_dti.nii.gz'
-        # subj_dwi_bval = parent_directory+'/Extract_DTI_Shell/'+tag+'__bval_dti'
-        # subj_dwi_bvec = parent_directory+'/Extract_DTI_Shell/'+tag+'__bvec_dti'
         subj_dwi_tracking = parent_directory+'/Tracking/'+tag+'__tracking.trk'
         
         # Where to save files: base = dir_RecoX initialized above
@@ -148,7 +149,7 @@ def main():
         dir_atlas = dir_RecoX+'0_recox_atlas/'
     
         #perform registration, convert generic affine mat to txt
-        ants_affine = antsRegistration(tag, subj_t1, dir_atlas)
+        ants_affine = antsRegistration(group, tag, subj_t1, dir_atlas, dir_ants_registrations)
     
         #try recobundlesX after registration is done
         if glob.glob(dir_recox_tracts+'/*.trk'):
