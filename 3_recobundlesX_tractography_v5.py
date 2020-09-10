@@ -107,9 +107,9 @@ def executeRecoX(group, tag, tractogram, dir_atlas, affine, dir_recox_tracts):
 """
 VARIABLES WHICH CONTROL THIS SCRIPT
 """
-#dir_data = '/Volumes/Venus/Tractoflow_APSP_results/'
-dir_data = '/Volumes/Venus/Tractoflow_RH_and_extras/'
-dir_RecoX = '/Volumes/Venus/RecobundlesX/'
+#dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_APSP_results/'
+dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_RH_and_extras/'
+dir_RecoX = '/Volumes/Venus/Kirton_Diffusion_Processing/2_RecobundlesX/'
 
 """
 --------------
@@ -139,14 +139,14 @@ def main():
         # Where to save files: base = dir_RecoX initialized above
         if not os.path.isdir(dir_RecoX):
             os.makedirs(dir_RecoX)
-        dir_ants_registrations = dir_RecoX+group+'/'+tag+'/0_ants_registrations/'
+        dir_ants_registrations = dir_RecoX+'4_RecoX_outputs/'+group+'/'+tag+'/0_ants_registrations/'
         if not os.path.isdir(dir_ants_registrations):
             os.makedirs(dir_ants_registrations)
-        dir_recox_tracts = dir_RecoX+group+'/'+tag+'/1_recox_tracts/'
+        dir_recox_tracts = dir_RecoX+'4_RecoX_outputs/'+group+'/'+tag+'/1_recox_tracts/'
         if not os.path.isdir(dir_recox_tracts):
             os.makedirs(dir_recox_tracts)
             
-        dir_atlas = dir_RecoX+'0_recox_atlas/'
+        dir_atlas = dir_RecoX+'3_recox_atlas/'
     
         #perform registration, convert generic affine mat to txt
         ants_affine = antsRegistration(group, tag, subj_t1, dir_atlas, dir_ants_registrations)

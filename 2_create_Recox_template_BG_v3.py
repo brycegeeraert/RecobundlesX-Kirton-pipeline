@@ -48,7 +48,7 @@ def t1Fixes(tract_directory):
     
     for tag in tag_list:
         # find t1 file, pass through mrtrix, and save in tracts folder
-        t1_reference = '/Volumes/Venus/Tractoflow_APSP_results/1_TDC/'+tag+'/Register_T1/'+tag+'__t1_warped.nii.gz'
+        t1_reference = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_APSP_results/TDC/'+tag+'/Register_T1/'+tag+'__t1_warped.nii.gz'
         t1_reference_fixed = tag+'__t1_warped_trk_reference.nii.gz'
     
         if not os.path.isfile(t1_reference_fixed):
@@ -152,7 +152,7 @@ def smoothClean():
 def coregisterSmoothedTracts():
     
     tag_list = getSubjectTags()
-    mni_template = '/Volumes/Venus/RecobundlesX/0_recox_atlas/mni_masked.nii.gz'
+    mni_template = '/Volumes/Venus/Kirton_Diffusion_Processing/2_RecobundlesX/3_recox_atlas/mni_masked.nii.gz'
     
     for tag in tag_list:
         

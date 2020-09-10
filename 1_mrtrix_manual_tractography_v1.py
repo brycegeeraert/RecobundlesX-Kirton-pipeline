@@ -32,9 +32,9 @@ tract = input[2]
 
 logging.info("...the inputs sent to script were bin: "+bin+' subject: '+subject+' tract: '+tract)
 
-subject_data_dir = '/Volumes/Venus/Tractoflow_APSP_results/1_'+bin+'/'+subject+'/Extract_DTI_Shell/'
+subject_data_dir = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_APSP_results/'+bin+'/'+subject+'/Extract_DTI_Shell/'
 subject_dwi = subject_data_dir+subject+'__dwi_dti.nii.gz'
-subject_rgb = '/Volumes/Venus/Tractoflow_APSP_results/1_'+bin+'/'+subject+'/DTI_Metrics/'+subject+'__rgb.nii.gz'
+subject_rgb = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_APSP_results/'+bin+'/'+subject+'/DTI_Metrics/'+subject+'__rgb.nii.gz'
 subject_bval = subject_data_dir+subject+'__bval_dti'
 subject_bvec = subject_data_dir+subject+'__bvec_dti'
 
