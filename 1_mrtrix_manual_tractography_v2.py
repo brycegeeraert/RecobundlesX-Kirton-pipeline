@@ -22,23 +22,25 @@ There are two modes for this script:
 - VERSIONS -
 
 v1: Works as described above
+v2: Changed to accept a subject folder as well to accept and place data in a custom folder
     
 """
 
 input = sys.argv[1:]
-bin = input[0]
+data_dir = input[0]
 subject = input[1]
 tract = input[2]
 
-logging.info("...the inputs sent to script were bin: "+bin+' subject: '+subject+' tract: '+tract)
+logging.info("...the inputs sent to script were data folder: "+data_dir+' subject: '+subject+' tract: '+tract)
 
-subject_data_dir = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'+bin+'/'+subject+'/Extract_DTI_Shell/'
-subject_dwi = subject_data_dir+subject+'__dwi_dti.nii.gz'
-subject_rgb = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'+bin+'/'+subject+'/DTI_Metrics/'+subject+'__rgb.nii.gz'
-subject_bval = subject_data_dir+subject+'__bval_dti'
-subject_bvec = subject_data_dir+subject+'__bvec_dti'
+#subject_data_dir = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'+bin+'/'+subject+'/Extract_DTI_Shell/'
+subject_data_dir = data_dir
+subject_dwi = subject_data_dir+'/Extract_DTI_Shell/'+subject+'__dwi_dti.nii.gz'
+subject_rgb = subject_data_dir+'/DTI_Metrics/'+subject+'__rgb.nii.gz'
+subject_bval = subject_data_dir+'/Extract_DTI_Shell/'+subject+'__bval_dti'
+subject_bvec = subject_data_dir+'/Extract_DTI_Shell/'+subject+'__bvec_dti'
 
-subject_atlas_dir = '/Volumes/Venus/RecobundlesX/1_Bryce_manual_tractography/'+bin+'/'+subject+'/'
+subject_atlas_dir = '/Volumes/Venus/Kirton_Diffusion_Processing/1_AdoDev_atlas_tractography_for_recox/'+subject+'/Manual_Tractography'
 tract_dir = subject_atlas_dir+'/'+tract+'/'
 
 if len(input) > 3:
@@ -58,7 +60,7 @@ else:
     not_roi_list = glob.glob('*not*.mif')
     
     tract_output = tract_dir+subject+'_'+tract+'_'+str(len(and_roi_list))+'and_'+str(len(not_roi_list))+'not.tck'
-    command = 'tckgen '+subject_dwi+' '+tract_output+' -algorithm Tensor_Prob -fslgrad '+subject_bvec+' '+subject_bval+' -select 20000 -seed_image '+seed_roi[0]+' -force'
+    command = 'tckgen '+subject_dwi+' '+tract_output+' -algorithm Tensor_Prob -fslgrad '+subject_bvec+' '+subject_bval+' -select 5000 -seeds 1000000 -seed_image '+seed_roi[0]+' -force'
     
     for roi in and_roi_list:
         command = command+' -include '+roi

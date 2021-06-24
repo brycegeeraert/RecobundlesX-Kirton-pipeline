@@ -50,7 +50,7 @@ FUNCTIONS SECTION BELOW
 # a subject tag, add that full path to a list
 def getSubjectList(data_dir):
     all_folders = [x[0] for x in os.walk(data_dir)]
-    subject_folder_regex = re.compile(r'\d\d-\d\d\d\d\Z') #2 digits, dash, 4 digits at very end of string (\Z)
+    subject_folder_regex = re.compile(r'\d\d\d\d\d\Z') #2 digits, dash, 4 digits at very end of string (\Z)
     subject_folder_list = list()
     for directory in all_folders:
         if subject_folder_regex.search(directory):
@@ -62,12 +62,12 @@ def getSubjectList(data_dir):
 def getSubjectTag(subject_directory):
     
     #make a regex below which will find one of 3 groups, and a subject tag
-    identifier_regex = re.compile(r'(TDC|AIS_L|PVI_L|AIS_R|PVI_R).*(\d\d-\d\d\d\d)')
+    identifier_regex = re.compile(r'\d\d\d\d\d\Z')
     info_list = identifier_regex.findall(subject_directory)
     
     #if working as intended, should return a list with group followed by tag
-    group = info_list[0][0]
-    tag = info_list[0][1]
+    group = 'AdoDev_Lebel'
+    tag = info_list[0]
     
     return group, tag
 
@@ -92,15 +92,15 @@ def antsRegistration(group, tag, t1, dir_atlas, dir_ants_registrations):
         
     return ants_affine_txt
 
-def executeRecoX(group, tag, tractogram, dir_atlas, affine, dir_recox_tracts):
+def executeRecoX(group, tag, tractogram, dir_atlas, affine, dir_recox_tracts, recox_script_location):
     
     config = dir_atlas+'bg_recox_config_v4.json'
     dir_tract_templates = dir_atlas+'atlas/*'
     
     logging.info('RecobundlesX beginning for: '+group+', '+tag)
     
-    command = 'scil_recognize_multi_bundles.py '+tractogram+' '+config+' '+dir_tract_templates+' '+affine+' --out_dir '+ \
-        dir_recox_tracts+' --log_level DEBUG --minimal_vote 0.50 --multi_parameters 18 --tractogram_clustering 10 12 --processes 8 --seeds 0 -f'
+    command = recox_script_location+' '+tractogram+' '+config+' '+dir_tract_templates+' '+affine+' --out_dir '+ \
+        dir_recox_tracts+' --log_level DEBUG --minimal_vote 0.33 --multi_parameters 18 --tractogram_clustering 10 12 --processes 8 --seeds 0 -f'
     os.system(command)
 
 
@@ -108,8 +108,10 @@ def executeRecoX(group, tag, tractogram, dir_atlas, affine, dir_recox_tracts):
 VARIABLES WHICH CONTROL THIS SCRIPT
 """
 #dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'
-dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_RH_and_extras/'
+dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_AdoDev_tractoflow_files_for_recox/'
 dir_RecoX = '/Volumes/Venus/Kirton_Diffusion_Processing/2_RecobundlesX/'
+
+recox_script_location = '/Users/Bryce/bin/Scilpy/scilpy/scripts/scil_recognize_multi_bundles.py'
 
 """
 --------------
@@ -118,6 +120,8 @@ MAIN CODE BODY
 """
 def main():
     subject_folders_list = getSubjectList(dir_data)
+
+    print(subject_folders_list)
     
     for parent_directory in subject_folders_list:
         
@@ -155,7 +159,7 @@ def main():
         if glob.glob(dir_recox_tracts+'/*.trk'):
             logging.info('Found trk files for '+group+' '+tag)
         else:
-            executeRecoX(group, tag, subj_dwi_tracking, dir_atlas, ants_affine, dir_recox_tracts)
+            executeRecoX(group, tag, subj_dwi_tracking, dir_atlas, ants_affine, dir_recox_tracts, recox_script_location)
 
 if __name__ == '__main__':
     main()

@@ -48,7 +48,7 @@ def t1Fixes(tract_directory):
     
     for tag in tag_list:
         # find t1 file, pass through mrtrix, and save in tracts folder
-        t1_reference = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_APSP_results/TDC/'+tag+'/Register_T1/'+tag+'__t1_warped.nii.gz'
+        t1_reference = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/TDC/'+tag+'/Register_T1/'+tag+'__t1_warped.nii.gz'
         t1_reference_fixed = tag+'__t1_warped_trk_reference.nii.gz'
     
         if not os.path.isfile(t1_reference_fixed):
@@ -74,16 +74,19 @@ def convertTrks(tract_directory):
             elif not os.path.isfile(filename+'.trk'):
                 if os.path.isfile(t1_reference_fixed):
                     logging.info('T1 image found, converting '+file+' to trk.')
-                    temp_tck = load_tck(file,reference=t1_reference_fixed)
+                    temp_tck = load_tck(file,reference=t1_reference_fixed,bbox_valid_check=False)
                     trk_save_name = filename+'.trk'
-                    save_tractogram(temp_tck,trk_save_name)
+                    save_tractogram(temp_tck,trk_save_name,bbox_valid_check=False)
                 else:
                     print(t1_reference_fixed)
                     logging.error('Fixed T1 image not found, conversion not executed.')
                     exit()
 
-def downsample():
-    command = 'for i in *.trk; do echo ${i}; base_name=$(basename ${i}); scil_remove_similar_streamlines.py ${i} 2 downsample/${base_name/.trk/_downsample.trk} -f -v; done'
+def clean_and_downsample():
+    command = "for i in *.trk; do echo ${i}; base_name=$(basename ${i}); tag=$(echo $base_name | cut -d'_' -f 1);"+\
+        "scil_remove_invalid_streamlines.py --reference ${tag}__t1_warped_trk_reference.nii.gz ${i} ${i/.trk/_valid.trk};"+\
+        "scil_remove_similar_streamlines.py ${i/.trk/_valid.trk} 2 downsample/${base_name/.trk/_downsample.trk} -f -v;"+\
+        "mv ${i/.trk/_valid.trk} validated/; done"
     os.system(command)
 
 
@@ -137,7 +140,8 @@ def manualClusterChecks():
     ready_bool = input('Are you ready to begin manual cluster checks? (y/n) ')
     
     if ready_bool == 'y':
-        command = 'for i in manually_clean/*.trk; do echo ${i}; base_name=$(basename ${i} .trk); scil_clean_qbx_clusters.py ${i}/*.trk manually_clean/${base_name}.trk manually_clean/${base_name}_.trk --min_cluster_size 5; done;'
+        command = "for i in fuse/*.trk; do echo ${i}; base_name=$(basename ${i} .trk); echo ${base_name}; "+\
+        "scil_clean_qbx_clusters.py manually_clean/${base_name}/*.trk manually_clean/${base_name}.trk manually_clean/${base_name}_.trk --min_cluster_size 5; done;"
         os.system(command)
         command = 'rm manually_clean/*_.trk'
         os.system(command)
@@ -149,10 +153,10 @@ def smoothClean():
     command = 'for i in manually_clean/*.trk; do echo ${i}; base_name=$(basename ${i}); scil_smooth_streamlines.py ${i} smooth_clean/smooth.trk --gaussian 10 -e 0.05; scil_outlier_rejection.py smooth_clean/smooth.trk smooth_clean/${base_name/.trk/_smooth_clean.trk} --alpha 0.5; rm smooth_clean/smooth.trk; done;'
     os.system(command)
 
-def coregisterSmoothedTracts():
+def coregisterSmoothedTracts(tract_directory):
     
     tag_list = getSubjectTags()
-    mni_template = '/Volumes/Venus/Kirton_Diffusion_Processing/2_RecobundlesX/3_recox_atlas/mni_masked.nii.gz'
+    mni_template = tract_directory+'/mni_masked.nii.gz'
     
     for tag in tag_list:
         
@@ -172,22 +176,18 @@ def renameAtlasTracts():
     i = 0
     for tag in tag_list:
         i += 1
-        tag_tracts = glob.glob('coregistered/*'+str(tag)+'*')
-        for tract in tag_tracts:
-            if 'L_AF' in tract:
-                command = 'cp '+tract+' final_renamed/subj_'+str(i)+'/AF_L_m.trk'
-                os.system(command)
-            if 'R_AF' in tract:
-                command = 'cp '+tract+' final_renamed/subj_'+str(i)+'/AF_R_m.trk'
-                os.system(command)
-            if 'L_UF' in tract:
-                command = 'cp '+tract+' final_renamed/subj_'+str(i)+'/UF_L_m.trk'
-                os.system(command)
-            if 'R_UF' in tract:
-                command = 'cp '+tract+' final_renamed/subj_'+str(i)+'/UF_R_m.trk'
-                os.system(command)
-        command = 'cp coregistered/'+tag+'_mni_output_Warped.nii.gz final_renamed/subj_'+str(i)+'/t1.nii.gz'
-        os.system(command)
+        tag_tracts = glob.glob('coregistered/*'+str(tag)+'*.trk')
+
+        for tract_file in tag_tracts:
+
+            tract_name = tract_file.split('_downsample')[0]
+            tract_name = tract_name.split(tag+'_')[1]
+            logging.info(tract_file)
+            logging.info('Renaming '+tag+' '+tract_name)
+
+            command = 'cp '+tract_file+' final_renamed/subj_'+str(i)+'/'+tract_name+'.trk'
+            os.system(command)
+
 
 def main():
     
@@ -212,12 +212,13 @@ def main():
         convertTrks(tract_directory)
     
     # --- 3 --- Downsample trk files
+    os.makedirs('validated/', exist_ok = True)
     os.makedirs('downsample/', exist_ok = True)
     if len(glob.glob('downsample/*.trk')) == len(glob.glob('*.trk')):
         logging.info('Looks like all .trk files have been downsampled, moving on.')
     else:
         logging.info('Downsampling tracts!')
-        downsample()
+        clean_and_downsample()
      
     # --- 4 --- Flip t1 images, register flipped to original,
     os.makedirs('flip/', exist_ok = True)
@@ -264,7 +265,7 @@ def main():
         logging.info('Final atlas tracts have been coregistered to mni!')
     else:
         logging.info('Coregistering smoothed/cleaned atlast tracts to mni template')
-        coregisterSmoothedTracts()
+        coregisterSmoothedTracts(tract_directory)
 
     # --- 9 --- Coregister smoothed atlas tracts
     #note that this should be adjusted once I need to copy and rename new tracts. Right now it works for my hard-coded L/R AF/UF needs!
