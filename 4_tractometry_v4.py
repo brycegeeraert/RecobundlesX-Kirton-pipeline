@@ -3,7 +3,7 @@
 """
 Created on Wed Aug 26 12:25:28 2020
 
-@author: Bryce
+@author: Bryce Geeraert, blgeerae@ucalgary.ca
 
 ----- Usage ------
 
@@ -19,7 +19,7 @@ Note directory is set in getParentFolder() below.
 
 ----- Outputs -----
 
-'/Volumes/Venus/Kirton_Diffusion_Processing/3_Tractometry/tractometry_<date>.csv'
+'tractometry_<date>.csv'
     - data table with columns of subject, tract, and all pulled measures
     - output dir is csv_save variable at the bottom of the main() function.
 
@@ -55,7 +55,13 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 # for each group, containing all subjects as sub-subfolders). Currently hard-coded
 # to save time but can change to input() line to ask user to drag and drop.
 def getParentFolder():
-    directory = '/Volumes/Venus/Kirton_Diffusion_Processing/2_RecobundlesX/4_RecoX_outputs'
+    directory = input("Please specify a folder where we should save all Recobundles outputs: ")
+    #directory = input('Which folder has the RecoX tracts to process?')
+    directory = directory.strip() # remove leading or trailing whitespaces
+    return directory
+
+def getDataFolder():
+    directory = input("Please specify a folder where you store your data (expecting 1 folder with subfolders for each group, and subsubfolders for each participant in each group): ")
     #directory = input('Which folder has the RecoX tracts to process?')
     directory = directory.strip() # remove leading or trailing whitespaces
     return directory
@@ -88,7 +94,7 @@ def getSubjectTag(subject_directory):
 """
 # -- For .trk files in the <subject>/1_recox_tracts/ directory, convert to .tck
 # and create a binary .nii mask file
-def convertAndMaskTrks(subject_tracts_folder, group, tag):
+def convertAndMaskTrks(dir_data, subject_tracts_folder, group, tag):
     #for every file in the folder, if it has the .trk suffix:
     for file in os.listdir(subject_tracts_folder):
         if file.endswith(".trk"):
@@ -106,8 +112,7 @@ def convertAndMaskTrks(subject_tracts_folder, group, tag):
             if os.path.isfile(filename+'.tck') and not os.path.isfile(filename+'.nii'):
                 logging.info('Producing binary .nii mask')
                 #reference image is required for tckmap, so let's specify where we expect to find the dwi image
-                dwi_template = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'\
-                    +group+'/'+tag+'/Extract_DTI_Shell/'+tag+'__dwi_dti.nii.gz'
+                dwi_template = dir_data+'/'+group+'/'+tag+'/Extract_DTI_Shell/'+tag+'__dwi_dti.nii.gz'
                 command = 'tckmap '+filename+'.tck '+filename+'.nii -template '+dwi_template
                 os.system(command)
     
@@ -116,10 +121,10 @@ def convertAndMaskTrks(subject_tracts_folder, group, tag):
 """
 # -- For a given subject tag, if the directory with NODDI metric maps has data for that person, register their
 # multishell data to single shell FA maps.
-def tractoflowRegistration(group, tag):
+def tractoflowRegistration(dir_data, group, tag):
 
-    dir_noddi_metrics = '/Volumes/Venus/Kirton_Diffusion_Processing/4_NODDI/1_metric_maps/'
-    dir_multishell_registration = '/Volumes/Venus/Kirton_Diffusion_Processing/4_NODDI/2_multishell_to_singleshell_warps/'
+    dir_noddi_metrics = dir_data+'/4_NODDI/1_metric_maps/'
+    dir_multishell_registration = dir_data+'/4_NODDI/2_multishell_to_singleshell_warps/'
     
     subj_ficvf = dir_noddi_metrics+tag+'_fitted_ficvf.nii'
     subj_odi = dir_noddi_metrics+tag+'_fitted_odi.nii'
@@ -129,13 +134,11 @@ def tractoflowRegistration(group, tag):
         #logging.info('NODDI files found for '+tag+'! registering multishell FA to single shell FA map')
         logging.critical('NODDI files found for '+tag+'! registering multishell FA to single shell FA map')
         
-        fa_singleshell = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'+group+'/'+tag+\
-            '/DTI_Metrics/'+tag+'__fa.nii.gz'
-        fa_multishell = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Multishell/'+tag+\
-            '/DTI_Metrics/'+tag+'__fa.nii.gz'
+        fa_singleshell = dir_data+'/1_Tractoflow_Singleshell/'+group+'/'+tag+'/DTI_Metrics/'+tag+'__fa.nii.gz'
+        fa_multishell = dir_data+'/1_Tractoflow_Multishell/'+tag+'/DTI_Metrics/'+tag+'__fa.nii.gz'
             
         warp_outputs = dir_multishell_registration+tag+'_multi_to_singleshell_'
-        dir_coregistered = '/Volumes/Venus/Kirton_Diffusion_Processing/4_NODDI/3_metric_maps_coregistered/'
+        dir_coregistered = dir_data+'/4_NODDI/3_metric_maps_coregistered/'
         ficvf_coreg = dir_coregistered+tag+'_ficvf_coreg.nii'
         odi_coreg = dir_coregistered+tag+'_odi_coreg.nii'
         
@@ -161,7 +164,7 @@ def tractoflowRegistration(group, tag):
 # -- For each tract in tract_order_list, calculate mean/sd/count for each metric
 # and add to lists. If either tract mask or measure map does not exist, add 'no tract'
 # or 'no map' instead to mark the cause of the missing value.
-def calculateMetrics(subject_folder, group, tag):
+def calculateMetrics(dir_data, subject_folder, group, tag):
     
     for tract in tract_order_list:
         
@@ -175,8 +178,7 @@ def calculateMetrics(subject_folder, group, tag):
             logging.info('Found '+tract_mask+', calculating metrics!')
             for measure in measure_means_list:
                 if not measure == 'ficvf' and not measure == 'odi':
-                    measure_map = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'\
-                        +group+'/'+tag+'/DTI_Metrics/'+tag+'__'+measure+'.nii.gz'
+                    measure_map = dir_data+'/1_Tractoflow_Singleshell/'+group+'/'+tag+'/DTI_Metrics/'+tag+'__'+measure+'.nii.gz'
                     if os.path.isfile(measure_map):
                         logging.info('Found '+measure+' map for '+tag+' at '+measure_map+', calculating mean and SD')
                         measure_output = subprocess.run(['mrstats',measure_map,'-mask',tract_mask,'-output','mean','-output','std','-output','count','-ignorezero'], stdout=subprocess.PIPE)
@@ -192,8 +194,7 @@ def calculateMetrics(subject_folder, group, tag):
                         appendMeasures(measure, measure_output_values)
                         del(measure_output_values)
                 elif measure == 'ficvf' or measure == 'odi':
-                    measure_map = '/Volumes/Venus/Kirton_Diffusion_Processing/4_NODDI/3_metric_maps_coregistered/'\
-                        +tag+'_'+measure+'_coreg.nii'
+                    measure_map = dir_data+'/4_NODDI/3_metric_maps_coregistered/'+tag+'_'+measure+'_coreg.nii'
                     if os.path.isfile(measure_map):
                         logging.info('Found '+measure+' map for '+tag+' at '+measure_map+', calculating mean and SD')
                         measure_output = subprocess.run(['mrstats',measure_map,'-mask',tract_mask,'-output','mean','-output','std','-output','count','-ignorezero'], stdout=subprocess.PIPE)
@@ -272,7 +273,9 @@ Can save myself the trouble of recreating this whole data table by loading an ol
 def main():
 
     #Determine which folder of data RecoX outputs to process
-    dir_parent = getParentFolder() #current hard-coded
+    dir_parent = getParentFolder()
+
+    dir_data = getDataFolder()
 
     for group in group_order_list:
         
@@ -289,16 +292,16 @@ def main():
             logging.info('Step 1: Trk conversion')
             #change working directory to tracts folder, so masks are saved in the right place
             os.chdir(subject_folder+'/1_recox_tracts/')
-            convertAndMaskTrks(subject_folder+'/1_recox_tracts/', group, tag)
+            convertAndMaskTrks(dir_data, subject_folder+'/1_recox_tracts/', group, tag)
             
             # --- 2 --- If NODDI available: register multishell to single shell tractoflow dataset
             logging.info('Step 2: Checking for NODDI maps. If they exist, registering multishell to singleshell tractoflow maps.')
-            tractoflowRegistration(group, tag)
+            tractoflowRegistration(dir_data, group, tag)
 
             # --- 3 --- Build lists up with measure means
             logging.info('Step 3: Extracting measure means')
             ### functions below: still to be finished.
-            calculateMetrics(subject_folder, group, tag)
+            calculateMetrics(dir_data, subject_folder, group, tag)
 
     # --- 3 --- Create dataframe
     logging.info('Step 3: Creating a dataframe with all measure means')
@@ -307,7 +310,7 @@ def main():
     dataframe = pd.DataFrame(dataframe_dict)
             
     # --- 4 --- Save dataframe
-    csv_save = '/Volumes/Venus/Kirton_Diffusion_Processing/3_Tractometry/tractometry_'+str(date.today())+'.csv'
+    csv_save = dir_data+'/3_Tractometry/tractometry_'+str(date.today())+'.csv'
     if os.path.isfile(csv_save):
         os.remove(csv_save)
     dataframe.to_csv(csv_save)

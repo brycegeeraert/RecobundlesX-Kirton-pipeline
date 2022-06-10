@@ -1,4 +1,6 @@
 """
+@author: Bryce Geeraert, blgeerae@ucalgary.ca
+
 PURPOSE:
  - after a set of tracts have been manually segmented in mrtrix from exemplar participants, 
  perform refinements and manual cluster pass/fail steps to produce atlas tract sets ready for use in RecobundlesX.
@@ -14,8 +16,10 @@ VERSIONS:
      - Read from a text file list with this data saved?
      - Make a list in main() and allow user to modify as they like? 
        Or better yet a dict so that the key-value pair is initial and final name elements?
+ - v4 added one note on line 22 to identify the only line that needs changing to work on a new computer / dataset.
 
-
+Note:
+Change line 55 to work on your computer. This line specifies where a T1 reference image can be found for each participant with exemplar tracts
 """
 
 import os, sys, re, glob, logging
@@ -48,7 +52,7 @@ def t1Fixes(tract_directory):
     
     for tag in tag_list:
         # find t1 file, pass through mrtrix, and save in tracts folder
-        t1_reference = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/TDC/'+tag+'/Register_T1/'+tag+'__t1_warped.nii.gz'
+        t1_reference = '/Volumes/Venus/Imaging/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/TDC/'+tag+'/Register_T1/'+tag+'__t1_warped.nii.gz'
         t1_reference_fixed = tag+'__t1_warped_trk_reference.nii.gz'
     
         if not os.path.isfile(t1_reference_fixed):
@@ -170,7 +174,6 @@ def coregisterSmoothedTracts(tract_directory):
     os.system(command)
         
 def renameAtlasTracts():
-    #note that this should be adjusted once I need to copy and rename new tracts. Right now it works for my hard-coded L/R AF/UF needs!
     tag_list = getSubjectTags()
     
     i = 0
@@ -267,8 +270,7 @@ def main():
         logging.info('Coregistering smoothed/cleaned atlast tracts to mni template')
         coregisterSmoothedTracts(tract_directory)
 
-    # --- 9 --- Coregister smoothed atlas tracts
-    #note that this should be adjusted once I need to copy and rename new tracts. Right now it works for my hard-coded L/R AF/UF needs!
+    # --- 9 --- Rename tracts to atlas naming conventions
     os.makedirs('final_renamed/', exist_ok = True)
     logging.info('Making coregistered/subj_X folders if they don''t exist.')
     for i in range(1,6):

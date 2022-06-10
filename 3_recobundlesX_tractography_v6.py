@@ -3,7 +3,7 @@
 """
 Created on Thu Jul 16 10:02:10 2020
 
-@author: Bryce
+@author: Bryce Geeraert, blgeerae@ucalgary.ca
 
 ----- Usage ------
 
@@ -94,7 +94,7 @@ def antsRegistration(group, tag, t1, dir_atlas, dir_ants_registrations):
 
 def executeRecoX(group, tag, tractogram, dir_atlas, affine, dir_recox_tracts, recox_script_location):
     
-    config = dir_atlas+'bg_recox_config_v4.json'
+    config = dir_atlas+'anna_recox_config_v1.json'
     dir_tract_templates = dir_atlas+'atlas/*'
     
     logging.info('RecobundlesX beginning for: '+group+', '+tag)
@@ -108,8 +108,10 @@ def executeRecoX(group, tag, tractogram, dir_atlas, affine, dir_recox_tracts, re
 VARIABLES WHICH CONTROL THIS SCRIPT
 """
 #dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'
-dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_RH_and_extras/'
-dir_RecoX = '/Volumes/Venus/Kirton_Diffusion_Processing/2_RecobundlesX/'
+dir_data = input("Enter folder of data for processing: ") #'/Volumes/Venus/Imaging/Kirton_Diffusion_Processing/1_Tractoflow_Singleshell/'
+#dir_data = '/Volumes/Venus/Kirton_Diffusion_Processing/1_Tractoflow_RH_and_extras/'
+dir_RecoX = input("Enter parent folder where atlas tracts are stored: ") #Anna/3_Recobundlex/2_CPC_CTC_test/
+#dir_RecoX = '/Volumes/Venus/Kirton_Diffusion_Processing/2_RecobundlesX/'
 
 recox_script_location = '/Users/Bryce/bin/Scilpy/scilpy/scripts/scil_recognize_multi_bundles.py'
 
@@ -121,6 +123,8 @@ MAIN CODE BODY
 def main():
     subject_folders_list = getSubjectList(dir_data)
     
+    print(subject_folders_list)
+
     for parent_directory in subject_folders_list:
         
         print(parent_directory)
